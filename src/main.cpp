@@ -7,17 +7,17 @@
 char*               ssid_pfix = (char*)"CaptivePortal";
 String              user_config_html = "";
 
-void thermo();
-void readDHT22();
+void temp();
+void humi();
 void handleNotFound();
+
+void readDHT22();
 
 DHTesp dht;
 int interval = 2000;
 unsigned long lastDHTReadMillis = 0;
 float humidity = 0;
 float temperature = 0;
-
-ESP8266WebServer server(80);
 
 /*
  *  ConfigPortal library to extend and implement the WiFi connected IOT device
@@ -35,6 +35,21 @@ ESP8266WebServer server(80);
  *
  */
 
+String responseHTML = ""
+       "<!DOCTYPE html><html><head><title>CaptivePortal</title></head><body><center>"
+       "<p>Captive Sample Server App</p>"
+       "<button id='button1' style='width:160px;height:60px'><font size='10'>temp</font></button>"
+       "<button id='button2' style='width:160px;height:60px'><font size='10'>humi</font></button>"
+       "<script>\n"
+       " button1.onclick=function(e) {"
+       " window.location.href = 'http://192.168.1.1/temp'"
+       "  };"
+       " button2.onclick=function(e) {"
+       " window.location.href = 'http://192.168.1.1/humi'"
+       "};</script>\r\n"
+       "<p>This is a captive portal example</p></center></body></html>";
+
+
 void setup() {
     Serial.begin(115200);
 
@@ -51,6 +66,7 @@ void setup() {
     }
 
     dht.setup(14, DHTesp::DHT22);
+
     // main setup
     Serial.printf("\nIP address : "); Serial.println(WiFi.localIP());
 
@@ -58,40 +74,11 @@ void setup() {
         Serial.println("MDNS responder started");
     }
 
-    server.on("/temp_hum", thermo);
-  
-    server.onNotFound(handleNotFound);
+    webServer.on("/temp", temp);
+    webServer.on("/humi", humi);
+    webServer.onNotFound(handleNotFound);
 
-    server.begin();
-    Serial.println("HTTP server started");
-}
-
-void loop() {
-    MDNS.update();
-    server.handleClient();
-    readDHT22();
-}
-
-void thermo(){
-  char mBuf[500];
-  char tmplt[] = "<html><head><meta charset=\"utf-8\">"
-  "<meta http-equiv='refresh' content='5'/>"
-  "<title>온습도계</title></head>"
-  "<body>"
-  "<script></script>"
-  "<center><p>"
-  "<h1><p>온도 : %.2f"
-  "<p>습도 : %.2f</h1>"
-  "</center>"
-  "</body></html>";
-  sprintf(mBuf, tmplt, temperature, humidity);
-  Serial.println("serving");
-  server.send(200, "text/html", mBuf);
-}
-
-void handleNotFound(){
-  String message = "File Not Found\n\n";
-  server.send(404, "text/plain", message);
+    webServer.begin();
 }
 
 void readDHT22(){
@@ -103,4 +90,47 @@ void readDHT22(){
     humidity = dht.getHumidity();
     temperature = dht.getTemperature();
   }
+}
+
+void temp(){
+  char mBuf[500];
+  char tmplt[] = "<html><head><meta charset=\"utf-8\">"
+  "<meta http-equiv='refresh' content='5'/>"
+  "<title>온도계</title></head>"
+  "<body>"
+  "<script></script>"
+  "<center><p>"
+  "<h1><p>온도 : %.2f</h1>"
+  "</center>"
+  "</body></html>";
+  sprintf(mBuf, tmplt, temperature);
+  Serial.println("serving");
+  webServer.send(200, "text/html", mBuf);
+}
+
+void humi(){
+  char mBuf[500];
+  char tmplt[] = "<html><head><meta charset=\"utf-8\">"
+  "<meta http-equiv='refresh' content='5'/>"
+  "<title>습도계</title></head>"
+  "<body>"
+  "<script></script>"
+  "<center><p>"
+  "<h1><p>습도 : %.2f</h1>"
+  "</center>"
+  "</body></html>";
+  sprintf(mBuf, tmplt, humidity);
+  Serial.println("serving");
+  webServer.send(200, "text/html", mBuf);
+}
+
+void handleNotFound(){
+  String message = "File Not Found\n\n";
+  webServer.send(404, "text/plain", message);
+}
+
+void loop() {
+    MDNS.update();
+    readDHT22();
+    webServer.handleClient();
 }
