@@ -4,8 +4,8 @@
 #include <ConfigPortal8266.h>
 #include <DHTesp.h>
 
-char*               ssid_pfix = (char*)"CaptivePortal";
-String              user_config_html = "";
+char *ssid_pfix = (char *)"CaptivePortal";
+String user_config_html = "";
 
 void temp();
 void humi();
@@ -35,56 +35,48 @@ float temperature = 0;
  *
  */
 
-/*String responseHTML = ""
-       "<!DOCTYPE html><html><head><title>CaptivePortal</title></head><body><center>"
-       "<p>Captive Sample Server App</p>"
-       "<button id='button1' style='width:160px;height:60px'><font size='10'>temp</font></button>"
-       "<button id='button2' style='width:160px;height:60px'><font size='10'>humi</font></button>"
-       "<script>\n"
-       " button1.onclick=function(e) {"
-       " window.location.href = '/temp'"
-       "  };"
-       " button2.onclick=function(e) {"
-       " window.location.href = '/humi'"
-       "};</script>\r\n"
-       "<p>This is a captive portal example</p></center></body></html>";*/
+void setup()
+{
+  Serial.begin(115200);
 
+  loadConfig();
+  // *** If no "config" is found or "config" is not "done", run configDevice ***
+  if (!cfg.containsKey("config") || strcmp((const char *)cfg["config"], "done"))
+  {
+    configDevice();
+  }
+  WiFi.mode(WIFI_STA);
+  WiFi.begin((const char *)cfg["ssid"], (const char *)cfg["w_pw"]);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
 
-void setup() {
-    Serial.begin(115200);
+  dht.setup(14, DHTesp::DHT22);
 
-    loadConfig();
-    // *** If no "config" is found or "config" is not "done", run configDevice ***
-    if(!cfg.containsKey("config") || strcmp((const char*)cfg["config"], "done")) {
-        configDevice();
-    }
-    WiFi.mode(WIFI_STA);
-    WiFi.begin((const char*)cfg["ssid"], (const char*)cfg["w_pw"]);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
+  // main setup
+  Serial.printf("\nIP address : ");
+  Serial.println(WiFi.localIP());
 
-    dht.setup(14, DHTesp::DHT22);
+  if (MDNS.begin("eunwifi"))
+  {
+    Serial.println("MDNS responder started");
+  }
 
-    // main setup
-    Serial.printf("\nIP address : "); Serial.println(WiFi.localIP());
+  webServer.on("/temp", temp);
+  webServer.on("/humi", humi);
+  webServer.onNotFound(handleNotFound);
 
-    if (MDNS.begin("eunwifi")) {
-        Serial.println("MDNS responder started");
-    }
-
-    webServer.on("/temp", temp);
-    webServer.on("/humi", humi);
-    webServer.onNotFound(handleNotFound);
-
-    webServer.begin();
+  webServer.begin();
 }
 
-void readDHT22(){
+void readDHT22()
+{
   unsigned long currentMillis = millis();
 
-  if(currentMillis - lastDHTReadMillis >= interval){
+  if (currentMillis - lastDHTReadMillis >= interval)
+  {
     lastDHTReadMillis = currentMillis;
 
     humidity = dht.getHumidity();
@@ -92,45 +84,49 @@ void readDHT22(){
   }
 }
 
-void temp(){
+void temp()
+{
   char mBuf[500];
   char tmplt[] = "<html><head><meta charset=\"utf-8\">"
-  "<meta http-equiv='refresh' content='5'/>"
-  "<title>온도계</title></head>"
-  "<body>"
-  "<script></script>"
-  "<center><p>"
-  "<h1><p>온도 : %.2f</h1>"
-  "</center>"
-  "</body></html>";
+                 "<meta http-equiv='refresh' content='5'/>"
+                 "<title>온도계</title></head>"
+                 "<body>"
+                 "<script></script>"
+                 "<center><p>"
+                 "<h1><p>온도 : %.2f</h1>"
+                 "</center>"
+                 "</body></html>";
   sprintf(mBuf, tmplt, temperature);
   Serial.println("temperature serving");
   webServer.send(200, "text/html", mBuf);
 }
 
-void humi(){
+void humi()
+{
   char mBuf[500];
   char tmplt[] = "<html><head><meta charset=\"utf-8\">"
-  "<meta http-equiv='refresh' content='5'/>"
-  "<title>습도계</title></head>"
-  "<body>"
-  "<script></script>"
-  "<center><p>"
-  "<h1><p>습도 : %.2f</h1>"
-  "</center>"
-  "</body></html>";
+                 "<meta http-equiv='refresh' content='5'/>"
+                 "<title>습도계</title></head>"
+                 "<body>"
+                 "<script></script>"
+                 "<center><p>"
+                 "<h1><p>습도 : %.2f</h1>"
+                 "</center>"
+                 "</body></html>";
   sprintf(mBuf, tmplt, humidity);
-  Serial.println("huminity serving");
+  Serial.println("humidity serving");
   webServer.send(200, "text/html", mBuf);
 }
 
-void handleNotFound(){
+void handleNotFound()
+{
   String message = "File Not Found\n\n";
   webServer.send(404, "text/plain", message);
 }
 
-void loop() {
-    MDNS.update();
-    readDHT22();
-    webServer.handleClient();
+void loop()
+{
+  MDNS.update();
+  readDHT22();
+  webServer.handleClient();
 }
