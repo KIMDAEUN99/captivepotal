@@ -35,19 +35,19 @@ float temperature = 0;
  *
  */
 
-String responseHTML = ""
+/*String responseHTML = ""
        "<!DOCTYPE html><html><head><title>CaptivePortal</title></head><body><center>"
        "<p>Captive Sample Server App</p>"
        "<button id='button1' style='width:160px;height:60px'><font size='10'>temp</font></button>"
        "<button id='button2' style='width:160px;height:60px'><font size='10'>humi</font></button>"
        "<script>\n"
        " button1.onclick=function(e) {"
-       " window.location.href = 'http://192.168.1.1/temp'"
+       " window.location.href = '/temp'"
        "  };"
        " button2.onclick=function(e) {"
-       " window.location.href = 'http://192.168.1.1/humi'"
+       " window.location.href = '/humi'"
        "};</script>\r\n"
-       "<p>This is a captive portal example</p></center></body></html>";
+       "<p>This is a captive portal example</p></center></body></html>";*/
 
 
 void setup() {
@@ -104,7 +104,7 @@ void temp(){
   "</center>"
   "</body></html>";
   sprintf(mBuf, tmplt, temperature);
-  Serial.println("serving");
+  Serial.println("temperature serving");
   webServer.send(200, "text/html", mBuf);
 }
 
@@ -120,7 +120,7 @@ void humi(){
   "</center>"
   "</body></html>";
   sprintf(mBuf, tmplt, humidity);
-  Serial.println("serving");
+  Serial.println("huminity serving");
   webServer.send(200, "text/html", mBuf);
 }
 
