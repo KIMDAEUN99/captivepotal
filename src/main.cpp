@@ -3,6 +3,9 @@
 #include <ESP8266mDNS.h>
 #include <ConfigPortal8266.h>
 #include <DHTesp.h>
+#include <SSD1306.h>
+
+SSD1306             display(0x3c, 4, 5, GEOMETRY_128_32);
 
 char *ssid_pfix = (char *)"CaptivePortal";
 String user_config_html = "";
@@ -38,6 +41,8 @@ float temperature = 0;
 void setup()
 {
   Serial.begin(115200);
+  dht.setup(14, DHTesp::DHT22);
+  delay(1000);
 
   loadConfig();
   // *** If no "config" is found or "config" is not "done", run configDevice ***
@@ -54,6 +59,12 @@ void setup()
   }
 
   dht.setup(14, DHTesp::DHT22);
+  
+  Serial.println(); Serial.println("Humidity \tTemperature ");
+
+  display.init();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_16);
 
   // main setup
   Serial.printf("\nIP address : ");
@@ -129,4 +140,13 @@ void loop()
   MDNS.update();
   readDHT22();
   webServer.handleClient();
+
+  Serial.printf("%.1f\t %.1f\n", temperature, humidity);
+
+  display.clear();
+  display.drawString(0, 0, "Temp : " + String(temperature));
+  display.drawString(0, 15, "Humi : " + String(humidity));
+  display.display();
+
+  delay(1000);
 }
